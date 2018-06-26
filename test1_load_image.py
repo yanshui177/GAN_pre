@@ -14,12 +14,12 @@ import os
 class data:
     def __init__(self, addr):
         self.addr = addr
-
-        img, pos = self.load_img_and_pts()
-        x1, y1, x2, y2, pos_small = self.get_margin(pos)
-        face = self.get_face(img, x1, y1, x2, y2)
-        mask = self.get_mask(pos_small)
-        self.save_img(face, mask)
+        print(self.walk_dir())
+        # img, pos = self.load_img_and_pts()
+        # x1, y1, x2, y2, pos_small = self.get_margin(pos)
+        # face = self.get_face(img, x1, y1, x2, y2)
+        # mask = self.get_mask(pos_small)
+        # self.save_img(face, mask)
 
     def load_img_and_pts(self):
         # load img
@@ -71,7 +71,24 @@ class data:
         cv2.imshow('2', img_mask)
         cv2.waitKey(0)
 
+    def walk_dir(self):
+        datafiles = []
+        temp = []
+        for (root, dirs, files) in os.walk(self.addr):  # 列出windows目录下的所有文件和文件名
+            for filename in files:
+                temp.append(os.path.join(root, filename))
+        for dir in temp:
+            kind = dir.split('.')[-1]
+            name = dir.split('\\')
+            if kind == 'jpg' or kind == 'png':
+                datafiles.append(dir.split('.')[0])
+        for i in range(datafiles.count('')):
+            datafiles.remove('')
+        datafiles = list(set(datafiles))  # 删除重复文件
+        print("共有文件：" + str(len(datafiles))+"个")
+        return datafiles
+
 if __name__ == "__main__":
-    addr = "./data/261068_2"
+    addr = "E:\\DateSet\\face alignment\\afw"
     data1 = data(addr)
 
