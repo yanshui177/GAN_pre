@@ -1,24 +1,33 @@
 # -*-coding:utf-8
-import matplotlib.pyplot as plt
-import numpy.ma as npm
+"""
+读取人俩图像数据库，自带的有68个特征点，根据人脸特征点的位置
+将人脸图像中人脸区域切割，并重新生成一对方形图像，其中人脸特
+征点用 图像表示
+
+from 闫帅帅
+"""
 import numpy as np
 import cv2
+import os
 
 
 class data:
     def __init__(self, addr):
-        self.img = cv2.imread('./261068_2.jpg')
+        self.img = cv2.imread(addr+'.jpg')
         pos_num, pos = self.read_pts(addr=addr)
         x1, y1, x2, y2, pos = self.get_margin(pos)
-        # face_img = self.get_face(self.img, x1, y1, x2, y2)
-        # cv2.imshow('22', face_img)  # cv2.imwrite('22.jpg', face_img)
-
+        face = self.get_face(self.img, x1, y1, x2, y2)
         mask = self.create_mask(pos)
-        cv2.imshow('2211', mask)  # cv2.imwrite('22.jpg', face_img)
+
+        cv2.imshow('11', face)
+        cv2.imshow('2211', mask)
+        cv2.imwrite('face.jpg', face)
+        cv2.imwrite('mask.jpg', mask)
+
         cv2.waitKey(0)
 
     def read_pts(self, addr):
-        f2 = open(addr, "r")
+        f2 = open(addr+'.pts', "r")
         lines = f2.readlines()
         pos_num = 0
         pos = []
@@ -49,11 +58,11 @@ class data:
     def create_mask(self, pos):
         width, height = np.max(pos, 0)
         img = np.zeros((height, width, 3), dtype=np.uint8)
-        print(pos)
-        cv2.circle(img, (20,20), 10,(0, 0, 255), thickness=3)
+        for i in range(len(pos)):
+            cv2.circle(img, (pos[i][0], pos[i][1]), 2, (255, 255, 255), thickness=-1)
         return img
 
 
 if __name__ == "__main__":
-    addr = "./261068_2.pts"
+    addr = "./data/261068_2"
     data1 = data(addr)
