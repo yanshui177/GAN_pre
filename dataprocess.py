@@ -14,14 +14,14 @@ class data:
     def __init__(self, addr, savepath='D:\\create_data'):
         self.savepath = savepath
         filepath = self.walk_dir(addr)
-        print(filepath[0])
-        img, pos = self.load_img_and_pts(filepath[0])
-        x1, y1, x2, y2, pos_small = self.get_margin(pos)
-        face = self.get_face(img, x1, y1, x2, y2)
-        mask = self.get_mask(pos_small)
-        img = self.normalize_img(img, [250,250], method='keep_face_size')
-        self.show_img([face, mask])
-        # self.save_img()
+        for j in range(len(filepath)):
+            img, pos = self.load_img_and_pts(filepath[j])
+            x1, y1, x2, y2, pos_small = self.get_margin(pos)
+            face = self.get_face(img, x1, y1, x2, y2)
+            facenew, mask= self.normalize_img(face, pos_small, [250, 250], method='keep_face_size')
+
+            self.show_img([face, facenew, mask, img])
+            # self.save_img()
 
     def load_img_and_pts(self, addr):
         # load img
@@ -63,11 +63,21 @@ class data:
         width = x2 - x1
         return img[y1:y1 + hight, x1:x1 + width]
 
-    def get_mask(self, pos):
+    def get_mask(self, pos, ratio, target_size):
+        pos = [[int(j) for j in i] for i in (pos/ratio)]
         width, height = np.max(pos, 0)
+        # img = np.zeros((height, width, 3), dtype=np.uint8)
         img = np.zeros((height, width, 3), dtype=np.uint8)
         for i in range(len(pos)):
             cv2.circle(img, (pos[i][0], pos[i][1]), 2, (255, 255, 255), thickness=-1)
+        top = (target_size[0] - img.shape[0]) / 2
+        bottom = top
+        left = (target_size[1] - img.shape[1]) / 2
+        right = left
+        print("原始人脸大小：{}, 目标大小：{},temp大小：{}，放缩比例：{}".
+              format(img.shape, target_size, img.shape, ratio))
+        return cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0]), \
+               np.max(ratio)
         return img
 
     def save_img(self, img_face, img_mask):
@@ -78,6 +88,7 @@ class data:
 
     def show_img(self, imglist):
         for i in range(len(imglist)):
+            print(type(imglist[i]), imglist[i].shape)
             cv2.imshow(str(i), imglist[i])
         cv2.waitKey(0)
 
@@ -98,32 +109,32 @@ class data:
         print("共有文件：" + str(len(datafiles))+"个")
         return datafiles
 
-    def normalize_img(self, img, target_size, method='keep_face_size'):
+    def normalize_img(self, img, pos_small, target_size, method='keep_face_size'):
         if method == 'keep_face_size':
-            ratio = [float(img.shape[0])/target_size[0], float(img.shape[1])/target_size[1]]  # source image bigger than target size
-            print("ratio:", ratio)
-            print(img.shape)
-            if np.max(ratio) > 1:
-                temp = cv2.resize(
-                    img,
-                    (int(img.shape[0]/np.max(ratio)), int(img.shape[1]/np.max(ratio)),),
-                    interpolation=cv2.INTER_CUBIC
-                )
-            else:
-                temp=img
+            # source image bigger than target size
+            ratio = np.max([float(img.shape[0])/float(target_size[0]),
+                           float(img.shape[1])/float(target_size[1])])
+
+            temp = cv2.resize(img,
+                              (int(img.shape[1]/ratio), int(img.shape[0]/ratio), ),
+                              interpolation=cv2.INTER_CUBIC
+                              )
             # newimg = np.zeros((target_size[0], target_size[1], 3), dtype=np.uint8)
             top =(target_size[0]-temp.shape[0])/2
             bottom = top
             left =(target_size[1]-temp.shape[1])/2
             right = left
-            print ("*")*50
-            print(temp.shape)
-            print(target_size)
-            print(top, left)
-            return cv2.copyMakeBorder(temp, top, bottom, left, right,
-                                   cv2.BORDER_CONSTANT, value=[0, 0, 0])
-        elif method == 'resize':
-            return cv2.resize(img, (target_size[0], target_size[1]), interpolation=cv2.INTER_CUBIC)
+            print("原始人脸大小：{}, 目标大小：{},temp大小：{}，放缩比例：{}".
+                  format(img.shape, target_size, temp.shape, ratio))
+            mask = self.get_mask(pos_small, ratio, [250, 250])
+            # self.show_img(mask)
+            mask = np.array(mask)
+            print(type(temp), type(mask))
+            print mask
+            print temp
+            cv2.copyMakeBorder(mask, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0])
+            return cv2.copyMakeBorder(temp, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0]),
+
         else:
             raise TypeError
 
