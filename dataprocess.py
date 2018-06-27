@@ -11,16 +11,17 @@ import os
 
 
 class data:
-    def __init__(self, addr):
-        self.savepath = 'D:\\create_data'
+    def __init__(self, addr, savepath='D:\\create_data'):
+        self.savepath = savepath
         filepath = self.walk_dir(addr)
         print(filepath[0])
         img, pos = self.load_img_and_pts(filepath[0])
         x1, y1, x2, y2, pos_small = self.get_margin(pos)
         face = self.get_face(img, x1, y1, x2, y2)
         mask = self.get_mask(pos_small)
-        self.show_img(face, mask)
-        # self.save_img(face, mask)
+        img = self.normalize_img(img, [250,250], method='keep_face_size')
+        self.show_img([face, mask])
+        # self.save_img()
 
     def load_img_and_pts(self, addr):
         # load img
@@ -33,12 +34,12 @@ class data:
         # load pts
         f2 = open(addr+'.pts', "r")
         lines = f2.readlines()
-        pos_num = 0
+        # pos_num = 0
         pos = []
         flag = 0
         for line3 in lines:
-            if line3.find('n_points')+1:
-                pos_num = int(line3.split(' ')[-1])
+            # if line3.find('n_points')+1:
+            #     pos_num = int(line3.split(' ')[-1])
             if line3.find('{')+1:
                 flag += 1
                 continue
@@ -75,9 +76,9 @@ class data:
         cv2.imwrite(path_img_face, img_face)
         cv2.imwrite(path_img_mask, img_mask)
 
-    def show_img(self, img_face, img_mask):
-        cv2.imshow('1', img_face)
-        cv2.imshow('2', img_mask)
+    def show_img(self, imglist):
+        for i in range(len(imglist)):
+            cv2.imshow(str(i), imglist[i])
         cv2.waitKey(0)
 
     def walk_dir(self, addr):
@@ -99,11 +100,32 @@ class data:
 
     def normalize_img(self, img, target_size, method='keep_face_size'):
         if method == 'keep_face_size':
-            size = img.shape
-            if size[0]>target_size[0] or size[1]>target_size[1]:
-                temp = cv2.resize(img, (size[0], size[1]), interpolation=cv2.INTER_CUBIC)
+            ratio = [float(img.shape[0])/target_size[0], float(img.shape[1])/target_size[1]]  # source image bigger than target size
+            print("ratio:", ratio)
+            print(img.shape)
+            if np.max(ratio) > 1:
+                temp = cv2.resize(
+                    img,
+                    (int(img.shape[0]/np.max(ratio)), int(img.shape[1]/np.max(ratio)),),
+                    interpolation=cv2.INTER_CUBIC
+                )
+            else:
+                temp=img
+            # newimg = np.zeros((target_size[0], target_size[1], 3), dtype=np.uint8)
+            top =(target_size[0]-temp.shape[0])/2
+            bottom = top
+            left =(target_size[1]-temp.shape[1])/2
+            right = left
+            print ("*")*50
+            print(temp.shape)
+            print(target_size)
+            print(top, left)
+            return cv2.copyMakeBorder(temp, top, bottom, left, right,
+                                   cv2.BORDER_CONSTANT, value=[0, 0, 0])
         elif method == 'resize':
             return cv2.resize(img, (target_size[0], target_size[1]), interpolation=cv2.INTER_CUBIC)
+        else:
+            raise TypeError
 
 
 if __name__ == "__main__":
