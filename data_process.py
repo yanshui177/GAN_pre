@@ -8,12 +8,14 @@
 import numpy as np
 import cv2
 import os
-
+import cPickle as pickle
 
 class data:
-    def __init__(self, addr, savepath='D:\\create_data'):
+    def __init__(self, addr, savepath='D:\\create_data\\faceimages\\'):
         self.savepath = savepath
         self.normal_size = [250, 250]
+        self.basedir = savepath
+
         filepath = self.walk_dir(addr)
         for j in range(len(filepath)):
             img, pos = self.load_img_and_pts(filepath[j])
@@ -27,9 +29,13 @@ class data:
                                  self.normal_size,
                                  init_pos)
             # print("init_pos:{}, mask大小：{}".format(init_pos, mask.shape))
-            self.save_img(filepath[j].split('\\')[-1], {'face':facenew, 'mask':mask})
-            self.show_img([face, facenew, mask])
-
+            images_name = filepath[j].split('\\')[-1]
+            images_dic = {'face':facenew, 'mask':mask}
+            self.save_img(self.basedir, images_name, images_dic)
+            # self.show_img([face, facenew, mask])
+        filepath = self.walk_dir(self.basedir)
+        with open('image.txt', 'w') as p:
+            pickle.dump(p, filepath)
     def load_img_and_pts(self, addr):
         # load img
         if os.path.exists(addr + '.jpg'):
@@ -69,18 +75,18 @@ class data:
         return img[y1:y1 + hight, x1:x1 + width]
 
     def get_mask(self, pos_landmarks, ratio, target_size, init_pos):
-        pos = np.array([[int(j) for j in i] for i in (pos_landmarks/ratio)]) + np.array(init_pos)
+        pos = np.array([[int(j) for j in i] for i in (pos_landmarks/ratio)]) + np.array([init_pos[1], init_pos[0]])
         img = np.zeros((target_size[0], target_size[1], 3), dtype=np.uint8)
         for i in range(len(pos)):
             cv2.circle(img, (pos[i][0], pos[i][1]), 2, (255, 255, 255), thickness=-1)
         return img
 
-    def save_img(self, name, images):
-        basedir = 'D:\\created_data\\'
+    def save_img(self, basedir, name, images):
+
         for i in images.keys():
             path_img_face = basedir + name + '_' + i + '.jpg'
             if not os.path.exists(basedir):
-                print("创建文件成功：", path_img_face)
+                print("创建文件夹成功：", path_img_face)
                 os.mkdir(basedir)
             print path_img_face
             cv2.imwrite(path_img_face, images[i])
@@ -121,7 +127,7 @@ class data:
             bottom = target_size[0] - top - temp.shape[0]
             left = int(round((target_size[1]-temp.shape[1])/2.0))
             right = target_size[1] - left - temp.shape[1]
-            # print("top:{}, bottom:{}, left:{}, right:{}".format(top, bottom, left, right))
+            # print("\n\ntop:{}, bottom:{}, left:{}, right:{}".format(top, bottom, left, right))
             face = cv2.copyMakeBorder(temp, top, bottom, left, right, cv2.BORDER_CONSTANT, value=[0, 0, 0])
             # print("原始人脸大小：{}, 目标大小：{},temp大小：{}，放缩比例：{}, face大小{}：".
             #       format(img.shape, target_size, temp.shape, ratio, face.shape))
