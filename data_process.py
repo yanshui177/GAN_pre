@@ -3,15 +3,17 @@
 读取人俩图像数据库，自带的有68个特征点，根据人脸特征点的位置
 将人脸图像中人脸区域切割，并重新生成一对方形图像，其中人脸特
 征点用 图像表示
-                               from 闫帅帅
+                                        from 闫帅帅
 """
 import numpy as np
 import cv2
 import os
 import cPickle as pickle
+import platform
+
 
 class data:
-    def __init__(self, addr, savepath='D:\\create_data\\faceimages\\'):
+    def __init__(self, addr, savepath):
         self.savepath = savepath
         self.normal_size = [250, 250]
         self.basedir = savepath
@@ -137,6 +139,18 @@ class data:
 
 
 if __name__ == "__main__":
-    addr = "E:\\DateSet\\face alignment"
-    data1 = data(addr)
+    sysstr = platform.system()
+    if sysstr == "Windows":
+        print("Call Windows tasks")
+        savepath = 'D:\\create_data\\faceimages\\'
+        addr = "E:\\DateSet\\face alignment"
+    elif sysstr == "Linux":
+        print("Call Linux tasks")
+        savepath = 'D:\\create_data\\faceimages\\'
+        addr = "E:\\DateSet\\face alignment"
+    else:
+        print("Other System tasks")
+        raise TypeError('系统类型错误:{}'.format(sysstr))
+
+    data1 = data(addr, savepath)
 
