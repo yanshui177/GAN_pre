@@ -35,7 +35,7 @@ class data:
             # self.show_img([face, facenew, mask])
         filepath = self.walk_dir(self.basedir)
         with open('image.txt', 'w') as p:
-            pickle.dump(p, filepath)
+            pickle.dump(filepath, p, )
     def load_img_and_pts(self, addr):
         # load img
         if os.path.exists(addr + '.jpg'):
